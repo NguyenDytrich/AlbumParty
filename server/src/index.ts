@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import SequelizeStore from 'connect-session-sequelize';
 
@@ -27,7 +28,14 @@ dotenv.config();
     }),
   );
 
-  await store.sync();
+  app.use(
+    cors({
+      origin: 'http://localhost:8081',
+      credentials: true,
+    }),
+  );
+
+  await store.sync({ force: true });
 
   app.get('/', (req, res) => {
     res.send('');
@@ -48,7 +56,10 @@ dotenv.config();
       state: csrf,
     };
 
-    return res.redirect(`https://accounts.spotify.com/authorize?${qs.stringify(args)}`);
+    req.session.save((err) => {
+      if (err) console.error(err);
+      return res.redirect(`https://accounts.spotify.com/authorize?${qs.stringify(args)}`);
+    });
   });
 
   app.get('/login/callback', async (req, res) => {
@@ -78,11 +89,35 @@ dotenv.config();
       user.authToken = tokens.access_token;
       user.refreshToken = tokens.refresh_token;
       await user.save();
+
+      req.session.isAuth = true;
+      req.session.user = apiUser.id;
     } catch (e) {
       throw e;
     }
 
-    return res.redirect('/');
+    return res.redirect(process.env.APP_URL ?? '/');
+  });
+
+  app.get('/auth', async (req, res) => {
+    console.log(req.session);
+    if (!req.session.isAuth) {
+      return res.sendStatus(404);
+    }
+    return res.json({
+      isAuth: req.session.isAuth,
+      user: req.session.user,
+    });
+  });
+
+  app.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (!err) {
+        return res.status(200);
+      } else {
+        return res.status(500);
+      }
+    });
   });
 
   app.listen(process.env.PORT, () => {
