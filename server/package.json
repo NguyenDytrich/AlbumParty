@@ -20,8 +20,6 @@
     "sequelize": "^6.6.2",
     "spotify-web-api-node": "^5.0.2",
     "ts-node": "^9.1.1",
-    "typeorm": "^0.2.32",
-    "typeorm-store": "^2.0.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {
