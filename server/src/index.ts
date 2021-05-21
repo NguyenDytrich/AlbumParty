@@ -1,13 +1,9 @@
 import express from 'express';
 import session from 'express-session';
 import dotenv from 'dotenv';
+import SequelizeStore from 'connect-session-sequelize';
 
-import { createConnection, getConnection, getRepository } from 'typeorm';
-import { Repository } from 'typeorm';
-import { SessionEntity } from 'typeorm-store';
-import { TypeormStore } from 'typeorm-store';
-import { Session } from './entity/Session';
-import { User } from './entity/User';
+import { init, User } from './models';
 
 import SpotifyWebApi from 'spotify-web-api-node';
 
@@ -18,17 +14,20 @@ dotenv.config();
 
 (async () => {
   const app = express();
-  await createConnection();
-  const sessionRepository = getRepository(Session) as unknown as Repository<SessionEntity>;
+  const SessionStore = SequelizeStore(session.Store);
+  const sequelize = await init();
+  const store = new SessionStore({ db: sequelize });
 
   app.use(
     session({
       resave: false,
       saveUninitialized: false,
-      store: new TypeormStore({ repository: sessionRepository }),
+      store,
       secret: 'superdupersecret',
     }),
   );
+
+  await store.sync();
 
   app.get('/', (req, res) => {
     res.send('');
@@ -68,39 +67,21 @@ dotenv.config();
     spotifyApi.setAccessToken(tokens.access_token);
     spotifyApi.setRefreshToken(tokens.refresh_token);
 
-    const { body: user } = await spotifyApi.getMe();
+    const { body: apiUser } = await spotifyApi.getMe();
+    console.log(apiUser);
 
-    const userRepository = getRepository(User);
-    const existingRecord = await userRepository.findOne({ where: { username: user.display_name } });
-    if (!existingRecord) {
-      // Create a record if no user exists
-      const _user = await getConnection()
-        .createQueryBuilder()
-        .insert()
-        .into(User)
-        .values([
-          {
-            username: user.id,
-            authToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-          },
-        ])
-        .returning('*')
-        .execute();
-      req.session.user = _user.generatedMaps[0].username;
-    } else {
-      // Just update the tokens in the database
-      const _user = await getConnection()
-        .createQueryBuilder()
-        .update(User)
-        .set({
-          authToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-        })
-        .returning('*')
-        .execute();
-      req.session.user = _user.generatedMaps[0].username;
+    try {
+      const [user, created] = await User.findOrCreate({ where: { username: apiUser.id } });
+      if (created) {
+        user.displayName = apiUser.display_name ?? apiUser.id;
+      }
+      user.authToken = tokens.access_token;
+      user.refreshToken = tokens.refresh_token;
+      await user.save();
+    } catch (e) {
+      throw e;
     }
+
     return res.redirect('/');
   });
 
