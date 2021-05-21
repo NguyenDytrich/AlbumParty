@@ -1,8 +1,0 @@
-{
-	"type": "sqlite",
-	"database": ":memory:",
-	"synchronize": true,
-	"entities": [
-		"src/entity/**/*.ts"
-	]
-}
