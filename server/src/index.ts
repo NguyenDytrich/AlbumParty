@@ -30,7 +30,7 @@ dotenv.config();
 
   app.use(
     cors({
-      origin: 'http://localhost:8081',
+      origin: process.env.CORS_ORIGINS?.split(' '),
       credentials: true,
     }),
   );
