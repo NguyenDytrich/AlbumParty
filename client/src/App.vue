@@ -1,25 +1,26 @@
 <template>
-  <div v-if="!isAuth">
-    <a href="http://localhost:3000/login">Login with Spotify</a>
-    <button @click="checkAuth">Check Auth</button>
+  <div class="landing-container" v-if="!isAuth">
+    <h1>Welcome to Album Party</h1>
+    <a class="button lg" href="http://localhost:3000/login">Login with Spotify</a>
+    <p class="subtext">Album Party requires a Spotify Premium membership</p>
   </div>
   <div v-else>
-    <div class="container">
-      <h1>Hi {{ user }}!</h1>
-      <a class="button" @click="logout">Logout</a>
-    </div>
-    <div class="panel">
-      <div class="panel-heading">
-        <h1>Live Parties</h1>
+    <div class="app-container">
+      <div class="header">
+        <div>
+          <h1>hi {{ user }}</h1>
+        </div>
+        <div>
+          <a class="button" @click="logout">Logout</a>
+        </div>
       </div>
-			<div class="panel-block">
-				<a class="button">Host a new party</a>
-			</div>
-      <div class="panel-block">Test</div>
-      <div class="panel-block">Test</div>
-    </div>
-    <div>
-      <a class="button">Start a new party</a>
+      <div id="parties">
+        <div class="header">
+          <h1>Live Parties</h1>
+          <a class="button">Host a new party</a>
+        </div>
+      </div>
+      <div id="other"></div>
     </div>
   </div>
 </template>

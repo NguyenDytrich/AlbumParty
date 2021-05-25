@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400&display=swap');
+
+$color0: #3c3c3c;
+$color1: #486665;
+$color2: #c5dca0;
+$color3: #8e7c93;
+$color4: #d0a6c0;
+$color5: #f6c0d0;
+
+body {
+	font-family: 'Roboto';
+	background-color: $color0;
+	color: $color4;
+	padding: 0;
+	margin: 0;
+}
+
+a{
+	&:visited {
+		color: $color5;
+	}
+
+	&.button {
+		text-decoration: none;
+		background-color: $color5;
+		color: $color0;
+		padding: 0.125em 0.5em;
+		display: inline-block;
+
+		&.lg {
+			font-size: 1.25em;
+			padding: 0.25em 1em;
+			margin-bottom: 0.25em;
+		}
+	}
+}
+
+h1 {
+	font-weight: 300;
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.subtext {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.app-container {
+	padding: 1em;
+	display: grid;
+	grid-template-columns: 20em auto 10em;
+	grid-template-rows: 5em auto 5em;
+	height: calc(100vh - 2em);
+	width: calc(100vw - 4em);
+	margin: auto;
+
+	.header {
+		grid-row-start: 1;
+		grid-row-end: 2;
+		grid-column-start: 1;
+		grid-column-end: last-line;
+	}
+
+	#parties {
+		grid-row-start: 2;
+		grid-column-start: 1;
+	}
+
+	#other {
+		grid-row-start: 2;
+		grid-column-start: 2;
+	}
+}
+
+.landing-container {
+	text-align: center;
+}
