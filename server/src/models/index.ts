@@ -11,8 +11,8 @@ export async function init(): Promise<Sequelize> {
   await sequelize.sync();
 
   // Associations
-  Party.belongsTo(User, { as: 'owner' });
   User.hasMany(Party);
+  Party.belongsTo(User, { foreignKey: 'owner' });
 
   await sequelize.sync({ force: true });
 

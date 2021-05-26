@@ -10,13 +10,22 @@
 
 <script>
 import { defineComponent } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 export default defineComponent({
+  setup() {
+    const router = useRouter();
+    return { router };
+  },
   methods: {
     async createNewParty() {
-      const res = await axios.post('http://localhost:3000/parties');
-      console.log(res);
+      try {
+        const { data } = await axios.post('http://localhost:3000/parties');
+        this.router.push(`/${data}`);
+      } catch (err) {
+        console.log(err);
+      }
     },
   },
 });

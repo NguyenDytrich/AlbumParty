@@ -11,6 +11,7 @@
           <h1>hi {{ user }}</h1>
         </div>
         <div>
+          <router-link to="/" class="button">Home</router-link>
           <a class="button" @click="logout">Logout</a>
         </div>
       </div>
