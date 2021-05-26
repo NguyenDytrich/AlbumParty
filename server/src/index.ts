@@ -1,3 +1,5 @@
+import http from 'http';
+import { Server, Socket } from 'socket.io';
 import express from 'express';
 import session from 'express-session';
 import cors from 'cors';
@@ -5,6 +7,7 @@ import dotenv from 'dotenv';
 import SequelizeStore from 'connect-session-sequelize';
 
 import { init, User } from './models';
+import PartyRoutes from './routes/Parties';
 
 import SpotifyWebApi from 'spotify-web-api-node';
 
@@ -37,10 +40,7 @@ dotenv.config();
 
   await store.sync({ force: true });
 
-  app.get('/', (req, res) => {
-    res.send('');
-  });
-
+  // Express routes
   app.get('/ping', (req, res) => {
     return res.send('pong');
   });
@@ -120,7 +120,15 @@ dotenv.config();
     });
   });
 
-  app.listen(process.env.PORT, () => {
-    console.log('[INFO] listening on ' + process.env.PORT);
+  app.use('/parties', PartyRoutes);
+
+  // Socket.io initialization
+
+  const server = http.createServer(app);
+  const io = new Server(server);
+  io.on('connection', (socket: Socket) => {
+    console.log(socket);
   });
+
+  server.listen(3000);
 })();

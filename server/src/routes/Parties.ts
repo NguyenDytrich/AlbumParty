@@ -1,8 +1,7 @@
 import { Router } from 'express';
 
-import { getConnection, getRepository } from 'typeorm';
-import { Party } from '../entity/Party';
-import { User } from '../entity/User';
+import { User, Party } from '../models';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -12,14 +11,11 @@ const router = Router();
  * Create a Party
  */
 router.post('/', async (req, res) => {
-  if (!req.session.isAuth) return res.status(400);
-  const userRepository = getRepository(User);
-  const user = await userRepository.findOne({ where: { username: req.session.user } });
-
-  const res = await getConnection()
-    .createQueryBuilder()
-    .insert()
-    .into(Party)
-    .values([{ uri: uuidv4() }])
-    .execute();
+  if (!req.session.isAuth) return res.status(401);
+  const user = await User.findByPk(req.session.user);
+  if (!user) return res.status(401);
+  const party = await user.createParty({ uuid: uuidv4() });
+  return res.send(party.uuid);
 });
+
+export default router;
