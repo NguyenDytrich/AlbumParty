@@ -14,13 +14,7 @@
           <a class="button" @click="logout">Logout</a>
         </div>
       </div>
-      <div id="parties">
-        <div class="header">
-          <h1>Live Parties</h1>
-          <a class="button">Host a new party</a>
-        </div>
-      </div>
-      <div id="other"></div>
+      <router-view></router-view>
     </div>
   </div>
 </template>
