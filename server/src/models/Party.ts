@@ -1,5 +1,9 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, Model, Optional } from 'sequelize';
 import { User } from './User';
+
+export interface PartyAttributes {
+  uuid: string;
+}
 
 export class Party extends Model {
   public owner!: User;
@@ -9,6 +13,6 @@ export class Party extends Model {
 export const PartyArgs = {
   uuid: {
     type: DataTypes.UUID,
-    unique: true,
+    primaryKey: true,
   },
 };

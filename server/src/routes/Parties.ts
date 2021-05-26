@@ -14,6 +14,11 @@ router.post('/', async (req, res) => {
   if (!req.session.isAuth) return res.status(401);
   const user = await User.findByPk(req.session.user);
   if (!user) return res.status(401);
+  await Party.destroy({
+    where: {
+      owner: req.session.user,
+    },
+  });
   const party = await user.createParty({ uuid: uuidv4() });
   return res.send(party.uuid);
 });
@@ -25,7 +30,7 @@ router.get('/:partyId', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const parties = await Party.findAll({ include: User });
+  const parties = await Party.findAll();
   return res.json(parties);
 });
 

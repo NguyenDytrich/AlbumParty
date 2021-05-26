@@ -1,6 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
-import { HasManyGetAssociationsMixin, HasManyCreateAssociationMixin } from 'sequelize';
-import { Party } from './Party';
+import { Party, PartyAttributes } from './Party';
 
 export class User extends Model {
   public username!: string;
@@ -8,8 +7,9 @@ export class User extends Model {
   public authToken!: string;
   public refreshToken!: string;
 
-  public getParties!: HasManyGetAssociationsMixin<Party>;
-  public createParty!: HasManyCreateAssociationMixin<Party>;
+  public getParty!: () => Promise<Party>;
+  public setParty!: (args: Party | null) => Promise<void>;
+  public createParty!: (args: PartyAttributes) => Promise<Party>;
 }
 
 export const UserArgs = {
