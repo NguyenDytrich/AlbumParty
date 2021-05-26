@@ -14,7 +14,7 @@ export async function init(): Promise<Sequelize> {
   User.hasOne(Party, { foreignKey: 'owner', sourceKey: 'username' });
   Party.belongsTo(User, { foreignKey: 'owner', targetKey: 'username' });
 
-  await sequelize.sync({ force: true });
+  await sequelize.sync();
 
   return sequelize;
 }

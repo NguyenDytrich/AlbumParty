@@ -125,9 +125,31 @@ dotenv.config();
   // Socket.io initialization
 
   const server = http.createServer(app);
-  const io = new Server(server);
+  const io = new Server(server, {
+    cors: {
+      origin: process.env.CORS_ORIGINS?.split(' '),
+      methods: ['GET', 'POST'],
+      credentials: true,
+    },
+  });
+
   io.on('connection', (socket: Socket) => {
-    console.log(socket);
+    socket.on('create-party', (...args) => {
+      socket.join(args[0]);
+    });
+    socket.on('new-message', (args) => {
+      io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message });
+    });
+  });
+
+  io.of('/').adapter.on('create-room', (room) => {
+    console.log(`room ${room} was created`);
+    console.log(io.of('/').adapter.rooms);
+  });
+
+  io.of('/').adapter.on('join-room', (room, id) => {
+    console.log(`socket ${id} has joined ${room}`);
+    console.log(io.of('/').adapter.rooms);
   });
 
   server.listen(3000);
