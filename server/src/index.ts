@@ -10,6 +10,7 @@ import { init, User } from './models';
 import PartyRoutes from './routes/Parties';
 
 import SpotifyWebApi from 'spotify-web-api-node';
+import Clients from './lib';
 
 import qs from 'querystring';
 import crypto from 'crypto';
@@ -49,10 +50,20 @@ dotenv.config();
     const csrf = crypto.randomBytes(64).toString('hex');
     req.session.state = csrf;
 
+    const scopes = [
+      'user-library-read',
+      'user-library-modify',
+      'user-read-currently-playing',
+      'user-modify-playback-state',
+      'user-read-playback-state',
+      'user-read-recently-played',
+    ];
+
     const args = {
       client_id: process.env.SPOTIFY_CLIENT_ID,
       redirect_uri: 'http://localhost:3000/login/callback',
       response_type: 'code',
+      scope: scopes.join(' '),
       state: csrf,
     };
 
@@ -79,7 +90,6 @@ dotenv.config();
     spotifyApi.setRefreshToken(tokens.refresh_token);
 
     const { body: apiUser } = await spotifyApi.getMe();
-    console.log(apiUser);
 
     try {
       const [user, created] = await User.findOrCreate({ where: { username: apiUser.id } });
@@ -95,6 +105,8 @@ dotenv.config();
     } catch (e) {
       throw e;
     }
+
+    Clients.set(apiUser.id, spotifyApi);
 
     return res.redirect(process.env.APP_URL ?? '/');
   });
@@ -113,9 +125,9 @@ dotenv.config();
   app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
       if (!err) {
-        return res.status(200);
+        return res.sendStatus(200);
       } else {
-        return res.status(500);
+        return res.sendStatus(500);
       }
     });
   });
@@ -142,15 +154,7 @@ dotenv.config();
     });
   });
 
-  io.of('/').adapter.on('create-room', (room) => {
-    console.log(`room ${room} was created`);
-    console.log(io.of('/').adapter.rooms);
+  server.listen(3000, () => {
+    console.log('Listening on 3000');
   });
-
-  io.of('/').adapter.on('join-room', (room, id) => {
-    console.log(`socket ${id} has joined ${room}`);
-    console.log(io.of('/').adapter.rooms);
-  });
-
-  server.listen(3000);
 })();

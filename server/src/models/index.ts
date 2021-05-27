@@ -3,11 +3,24 @@ import { Party, PartyArgs } from './Party';
 import { User, UserArgs } from './User';
 
 export async function init(): Promise<Sequelize> {
-  const sequelize = new Sequelize(process.env.DB_CONNECTION_URL ?? '');
+  const sequelize = new Sequelize(process.env.DB_CONNECTION_URL ?? '', { logging: false });
   const args = { underscored: true };
 
   await Party.init(PartyArgs, { sequelize, ...args });
-  await User.init(UserArgs, { sequelize, ...args });
+  await User.init(UserArgs, {
+    sequelize,
+    defaultScope: {
+      attributes: {
+        exclude: ['authToken', 'refreshToken'],
+      },
+    },
+    scopes: {
+      auth: {
+        include: ['authToken', 'refreshToken'],
+      },
+    },
+    ...args,
+  });
   await sequelize.sync();
 
   // Associations
