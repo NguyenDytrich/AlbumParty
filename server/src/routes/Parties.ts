@@ -38,23 +38,21 @@ router.post('/', async (req, res) => {
     // API twice here
     data = await wrapper.getMyRecentlyPlayedTracks({ limit: 1 });
 
-    let contextUri, contextUrl, trackId, images, albumName, trackName, artists;
-
     item = data.body.items[0];
 
     if (!item) throw new Error('No recently played tracks?');
 
-    contextUri = item.context.uri;
-    contextUrl = item.context.external_urls.spotify;
-    trackId = item.track.id;
-    trackName = item.track.name;
+    const contextUri = item.context.uri;
+    const contextUrl = item.context.external_urls.spotify;
+    const trackId = item.track.id;
+    const trackName = item.track.name;
 
     const _artists = item.track.artists;
-    artists = _artists.map(({ name }) => name);
+    const artists = _artists.map(({ name }) => name);
 
     data = await wrapper.getTrack(trackId ?? '');
-    images = data.body.album.images as ImageInfo[];
-    albumName = data.body.album.name;
+    const images = data.body.album.images as ImageInfo[];
+    const albumName = data.body.album.name;
 
     playing = { trackId, trackName, artists, contextUri, contextUrl, images, albumName };
   }
@@ -69,7 +67,8 @@ router.post('/', async (req, res) => {
 router.get('/:partyId', async (req, res) => {
   const party = await Party.findOne({ where: { uuid: req.params.partyId } });
   if (!party) return res.sendStatus(404);
-  return res.sendStatus(200);
+  res.status(200);
+  return res.json(party);
 });
 
 router.get('/', async (req, res) => {

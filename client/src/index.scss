@@ -35,7 +35,7 @@ a{
 	}
 }
 
-h1 {
+h1, h2, h3, h4 {
 	font-weight: 300;
 }
 
@@ -76,9 +76,11 @@ h1 {
 		grid-column-start: 2;
 	}
 
-	#chat {
+	#party {
 		grid-row-start: 2;
 		grid-column-start: 1;
+		grid-column-end: last-line;
+
 	}
 }
 

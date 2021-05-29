@@ -1,24 +1,29 @@
 <template>
-  <div id="chat">
-    <h1>Live Chat</h1>
-    <div id="log">
-      <Message v-for="m in chat" :key="m.id" :author="m.author" :message="m.message" />
+  <div id="party">
+    <div id="chat">
+      <h1>Live Chat</h1>
+      <div id="log">
+        <Message v-for="m in chat" :key="m.id" :author="m.author" :message="m.message" />
+      </div>
+      <div id="new-msg">
+        <span>></span
+        ><input type="text" placeholder="send a message..." v-model="newMessage" @keydown.enter="sendMessage" />
+      </div>
     </div>
-    <div id="new-msg">
-      <span>></span
-      ><input type="text" placeholder="send a message..." v-model="newMessage" @keydown.enter="sendMessage" />
-    </div>
+    <Player :title="currentTrack.trackName" :artists="currentTrack.artists" :imgUrl="currentTrack.images[0].url" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, ref } from 'vue';
+import { defineComponent, onBeforeMount, ref, reactive } from 'vue';
 
 import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import { key } from '@/store';
 
 import Message from '@/components/Message.vue';
+import Player from '@/components/Player.vue';
+
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
@@ -37,14 +42,31 @@ export default defineComponent({
 
     const chat = ref([] as Msg[]);
     const newMessage = ref('');
+    let currentTrack = reactive({
+      contextUri: '',
+      contextUrl: '',
+      images: [],
+      albumName: '',
+      artists: [],
+      trackName: '',
+      trackId: '',
+    });
 
     onBeforeMount(async () => {
       const uuid = route.params.partyId;
       try {
         const res = await axios.get(`http://localhost:3000/parties/${uuid}`);
+        const { contextUri, contextUrl, images, albumName, artists, trackName, trackId } = res.data.currentlyPlaying;
         console.log(res);
         if (res.status == 200) {
           socket.emit('create-party', uuid);
+          currentTrack.contextUri = contextUri;
+          currentTrack.contextUrl = contextUrl;
+          currentTrack.albumName = albumName;
+          currentTrack.artists = artists;
+          currentTrack.trackName = trackName;
+          currentTrack.images = images;
+          currentTrack.trackId = trackId;
         }
       } catch {
         socket.disconnect();
@@ -55,7 +77,7 @@ export default defineComponent({
       chat.value.push(args);
     });
 
-    return { socket, router, route, store, chat, newMessage };
+    return { socket, router, route, store, chat, newMessage, currentTrack };
   },
   methods: {
     sendMessage() {
@@ -68,6 +90,7 @@ export default defineComponent({
     },
   },
   components: {
+    Player,
     Message,
   },
 });
@@ -81,10 +104,8 @@ $color3: #8e7c93;
 $color4: #d0a6c0;
 $color5: #f6c0d0;
 
-#chat {
-  display: flex;
-  flex-direction: column;
-
+#chat,
+#player {
   h1 {
     margin-top: 0;
   }
@@ -135,5 +156,21 @@ input {
 .msg-body {
   padding-left: 1em;
   color: $color3;
+}
+
+#party {
+  display: grid;
+  grid-template-columns: 20em auto;
+  gap: 5em;
+}
+
+#chat {
+  grid-column-start: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#player {
+  grid-column-start: 2;
 }
 </style>

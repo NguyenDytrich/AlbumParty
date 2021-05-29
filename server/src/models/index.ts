@@ -21,13 +21,13 @@ export async function init(): Promise<Sequelize> {
     },
     ...args,
   });
-  await sequelize.sync();
+  await sequelize.sync({ force: true });
 
   // Associations
   User.hasOne(Party, { foreignKey: 'owner', sourceKey: 'username' });
   Party.belongsTo(User, { foreignKey: 'owner', targetKey: 'username' });
 
-  await sequelize.sync();
+  await sequelize.sync({ force: true });
 
   return sequelize;
 }
