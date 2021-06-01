@@ -1,7 +1,7 @@
 <template>
   <div class="landing-container" v-if="!isAuth">
     <h1>Welcome to Album Party</h1>
-    <a class="button lg" href="http://localhost:3000/login">Login with Spotify</a>
+    <a class="button lg" :href="loginUrl">Login with Spotify</a>
     <p class="subtext">Album Party requires a Spotify Premium membership</p>
   </div>
   <div v-else>
@@ -29,10 +29,11 @@ export default defineComponent({
   components: {},
   setup() {
     const store = useStore(key);
+    const loginUrl = `${process.env.VUE_APP_API_URL}/login`;
     onBeforeMount(async () => {
       await store.dispatch('tryAuth');
     });
-    return { store };
+    return { store, loginUrl };
   },
   computed: {
     ...mapGetters(['isAuth', 'user']),

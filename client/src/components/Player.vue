@@ -29,6 +29,8 @@ import { useRoute } from 'vue-router';
 import { useStore, mapGetters } from 'vuex';
 import { key } from '@/store';
 
+const baseUrl = process.env.VUE_APP_API_URL ?? '';
+
 export default defineComponent({
   props: {
     title: String,
@@ -45,25 +47,25 @@ export default defineComponent({
   },
   methods: {
     async play() {
-      const res = await axios.post('http://localhost:3000/player/play', {
+      const res = await axios.post(`${baseUrl}/player/play`, {
         room: this.route.params.partyId,
       });
     },
     async pause() {
-      const res = await axios.post('http://localhost:3000/player/pause', {
+      const res = await axios.post(`${baseUrl}/player/pause`, {
         room: this.route.params.partyId,
       });
     },
     async save() {
-      const res = await axios.post('http://localhost:3000/player/save');
+      const res = await axios.post(`${baseUrl}/player/save`);
     },
     async skip() {
-      const res = await axios.post('http://localhost:3000/player/skip', {
+      const res = await axios.post(`${baseUrl}/player/skip`, {
         room: this.route.params.partyId,
       });
     },
     async back() {
-      const res = await axios.post('http://localhost:3000/player/skip?back=true', {
+      const res = await axios.post(`${baseUrl}/player/skip?back=true`, {
         room: this.route.params.partyId,
       });
     },

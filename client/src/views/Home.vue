@@ -22,13 +22,15 @@ import { defineComponent, onBeforeMount, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
+const baseUrl = process.env.VUE_APP_API_URL ?? '';
+
 export default defineComponent({
   setup() {
     const router = useRouter();
     const parties = reactive([]);
     onBeforeMount(async () => {
       try {
-        const { data } = await axios.get('http://localhost:3000/parties');
+        const { data } = await axios.get(`${baseUrl}/parties`);
         const _array = data.map((i) => {
           return {
             id: `/${i.uuid}`,
@@ -50,7 +52,7 @@ export default defineComponent({
   methods: {
     async createNewParty() {
       try {
-        const { data } = await axios.post('http://localhost:3000/parties');
+        const { data } = await axios.post(`${baseUrl}/parties`);
         this.router.push(`/${data}`);
       } catch (err) {
         console.log(err);

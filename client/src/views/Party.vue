@@ -33,11 +33,13 @@ interface Msg {
   message: string;
 }
 
+const baseUrl = process.env.VUE_APP_API_URL ?? '';
+
 export default defineComponent({
   setup() {
     const router = useRouter();
     const route = useRoute();
-    const socket = io('http://localhost:3000');
+    const socket = io(baseUrl);
     const store = useStore(key);
 
     const chat = ref([] as Msg[]);
@@ -56,10 +58,10 @@ export default defineComponent({
     onBeforeMount(async () => {
       const uuid = route.params.partyId;
       try {
-        const res = await axios.get(`http://localhost:3000/parties/${uuid}`);
+        const res = await axios.get(`${baseUrl}/parties/${uuid}`);
         const { contextUri, contextUrl, images, albumName, artists, trackName, trackId } = res.data.currentlyPlaying;
         if (res.status == 200) {
-          socket.emit('create-party', uuid);
+          socket.emit('join-party', { uuid, user: store.state.user });
 
           // Assign all properties like this otherwise strings won't update
           currentTrack.contextUri = contextUri;
