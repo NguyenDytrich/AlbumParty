@@ -3,14 +3,14 @@
     <div id="chat">
       <h1>Live Chat</h1>
       <div id="log">
-        <Message v-for="m in chat" :key="m.id" :author="m.author" :message="m.message" />
+        <Message v-for="m in chat" :key="m.id" :author="m.author" :message="m.message" :meta="m.meta" />
       </div>
       <div id="new-msg">
         <span>></span
         ><input type="text" placeholder="send a message..." v-model="newMessage" @keydown.enter="sendMessage" />
       </div>
     </div>
-    <Player :title="currentTrack.trackName" :artists="currentTrack.artists" :imgUrl="currentTrack.images[0].url" />
+    <Player :title="currentTrack.trackName" :artists="currentTrack.artists" :imgUrl="imgUrl" />
   </div>
 </template>
 
@@ -41,6 +41,7 @@ export default defineComponent({
     const store = useStore(key);
 
     const chat = ref([] as Msg[]);
+    const imgUrl = ref('');
     const newMessage = ref('');
     let currentTrack = reactive({
       contextUri: '',
@@ -57,9 +58,10 @@ export default defineComponent({
       try {
         const res = await axios.get(`http://localhost:3000/parties/${uuid}`);
         const { contextUri, contextUrl, images, albumName, artists, trackName, trackId } = res.data.currentlyPlaying;
-        console.log(res);
         if (res.status == 200) {
           socket.emit('create-party', uuid);
+
+          // Assign all properties like this otherwise strings won't update
           currentTrack.contextUri = contextUri;
           currentTrack.contextUrl = contextUrl;
           currentTrack.albumName = albumName;
@@ -67,9 +69,14 @@ export default defineComponent({
           currentTrack.trackName = trackName;
           currentTrack.images = images;
           currentTrack.trackId = trackId;
+
+          // Set the imgUrl separate of the currentTrack object otherwise
+          // bad things will happen.
+          imgUrl.value = images[0].url;
         }
       } catch {
         socket.disconnect();
+        console.error('Error retrieving data from server');
         router.push('/');
       }
     });
@@ -77,7 +84,7 @@ export default defineComponent({
       chat.value.push(args);
     });
 
-    return { socket, router, route, store, chat, newMessage, currentTrack };
+    return { socket, router, route, store, chat, newMessage, currentTrack, imgUrl };
   },
   methods: {
     sendMessage() {
@@ -156,6 +163,14 @@ input {
 .msg-body {
   padding-left: 1em;
   color: $color3;
+}
+
+.msg-server {
+  font-style: italic;
+  background-color: $color4;
+  color: $color0;
+  padding: 0.25em 1em;
+  text-align: center;
 }
 
 #party {

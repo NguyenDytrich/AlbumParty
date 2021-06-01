@@ -9,27 +9,64 @@
       <img :src="imgUrl" />
     </div>
     <div id="controls">
-      <a>Save</a>
+      <a @click="save">Save</a>
       <span> / </span>
-      <a>Play</a>
+      <a @click="play">Play</a>
       <span> / </span>
-      <a>Pause</a>
+      <a @click="pause">Pause</a>
       <span> / </span>
-      <a>Skip</a>
+      <a @click="skip">Skip</a>
       <span> / </span>
-      <a>Prev</a>
+      <a @click="back">Prev</a>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import axios from 'axios';
+import { useRoute } from 'vue-router';
+import { useStore, mapGetters } from 'vuex';
+import { key } from '@/store';
 
 export default defineComponent({
   props: {
     title: String,
     artists: Array,
     imgUrl: String,
+  },
+  setup() {
+    const store = useStore(key);
+    const route = useRoute();
+    return { store, route };
+  },
+  computed: {
+    ...mapGetters(['user']),
+  },
+  methods: {
+    async play() {
+      const res = await axios.post('http://localhost:3000/player/play', {
+        room: this.route.params.partyId,
+      });
+    },
+    async pause() {
+      const res = await axios.post('http://localhost:3000/player/pause', {
+        room: this.route.params.partyId,
+      });
+    },
+    async save() {
+      const res = await axios.post('http://localhost:3000/player/save');
+    },
+    async skip() {
+      const res = await axios.post('http://localhost:3000/player/skip', {
+        room: this.route.params.partyId,
+      });
+    },
+    async back() {
+      const res = await axios.post('http://localhost:3000/player/skip?back=true', {
+        room: this.route.params.partyId,
+      });
+    },
   },
 });
 </script>

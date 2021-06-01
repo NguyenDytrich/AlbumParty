@@ -29,13 +29,10 @@ export default defineComponent({
   components: {},
   setup() {
     const store = useStore(key);
-    return { store };
-  },
-  data() {
-    const store = useStore(key);
     onBeforeMount(async () => {
       await store.dispatch('tryAuth');
     });
+    return { store };
   },
   computed: {
     ...mapGetters(['isAuth', 'user']),

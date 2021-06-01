@@ -2,26 +2,31 @@ import http from 'http';
 import { Server, Socket } from 'socket.io';
 import express from 'express';
 import session from 'express-session';
+import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import SequelizeStore from 'connect-session-sequelize';
 
 import { init, User } from './models';
 import PartyRoutes from './routes/Parties';
+import PlayerRoutes from './routes/Player';
 
 import SpotifyWebApi from 'spotify-web-api-node';
-import Clients from './lib';
+import { SpotifyClients as Clients } from './lib';
 
 import qs from 'querystring';
 import crypto from 'crypto';
 
 dotenv.config();
 
+let io: Server;
+
 (async () => {
   const app = express();
-  const SessionStore = SequelizeStore(session.Store);
   const sequelize = await init();
+  const SessionStore = SequelizeStore(session.Store);
   const store = new SessionStore({ db: sequelize });
+  await store.sync({ force: true });
 
   app.use(
     session({
@@ -32,14 +37,15 @@ dotenv.config();
     }),
   );
 
+
+  app.use(bodyParser.json());
+
   app.use(
     cors({
       origin: process.env.CORS_ORIGINS?.split(' '),
       credentials: true,
     }),
   );
-
-  await store.sync({ force: true });
 
   // Express routes
   app.get('/ping', (req, res) => {
@@ -112,7 +118,6 @@ dotenv.config();
   });
 
   app.get('/auth', async (req, res) => {
-    console.log(req.session);
     if (!req.session.isAuth) {
       return res.sendStatus(404);
     }
@@ -133,24 +138,23 @@ dotenv.config();
   });
 
   app.use('/parties', PartyRoutes);
+  app.use('/player', PlayerRoutes);
 
   // Socket.io initialization
-
   const server = http.createServer(app);
-  const io = new Server(server, {
+  io = new Server(server, {
     cors: {
       origin: process.env.CORS_ORIGINS?.split(' '),
       methods: ['GET', 'POST'],
       credentials: true,
     },
   });
-
   io.on('connection', (socket: Socket) => {
     socket.on('create-party', (...args) => {
       socket.join(args[0]);
     });
     socket.on('new-message', (args) => {
-      io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message });
+      io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message, meta: {} });
     });
   });
 
@@ -158,3 +162,5 @@ dotenv.config();
     console.log('Listening on 3000');
   });
 })();
+
+export { io };
