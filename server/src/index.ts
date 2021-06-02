@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import SequelizeStore from 'connect-session-sequelize';
+import Redis from 'ioredis';
 
 import { init, User } from './models';
 import PartyRoutes from './routes/Parties';
@@ -20,6 +21,8 @@ import crypto from 'crypto';
 dotenv.config();
 
 let io: Server;
+const redis = new Redis();
+const baseUrl = `http://${process.env.HOST_NAME}`;
 
 (async () => {
   const app = express();
@@ -36,7 +39,6 @@ let io: Server;
       secret: 'superdupersecret',
     }),
   );
-
 
   app.use(bodyParser.json());
 
@@ -67,7 +69,7 @@ let io: Server;
 
     const args = {
       client_id: process.env.SPOTIFY_CLIENT_ID,
-      redirect_uri: 'http://localhost:3000/login/callback',
+      redirect_uri: `${baseUrl}/login/callback`,
       response_type: 'code',
       scope: scopes.join(' '),
       state: csrf,
@@ -82,13 +84,13 @@ let io: Server;
   app.get('/login/callback', async (req, res) => {
     const { state, code } = req.query;
     if (state != req.session.state) {
-      return res.status(500);
+      return res.sendStatus(500);
     }
 
     const spotifyApi = new SpotifyWebApi({
       clientId: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      redirectUri: 'http://localhost:3000/login/callback',
+      redirectUri: `${baseUrl}/login/callback`,
     });
 
     const { body: tokens } = await spotifyApi.authorizationCodeGrant(code as string);
@@ -150,8 +152,12 @@ let io: Server;
     },
   });
   io.on('connection', (socket: Socket) => {
-    socket.on('create-party', (...args) => {
-      socket.join(args[0]);
+    socket.on('join-party', async (args) => {
+      // Join the party
+      socket.join(args.uuid);
+      // add user to set in redis
+      await redis.sadd(args.uuid, args.user);
+      console.log(await redis.smembers(args.uuid));
     });
     socket.on('new-message', (args) => {
       io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message, meta: {} });
@@ -163,4 +169,4 @@ let io: Server;
   });
 })();
 
-export { io };
+export { io, redis };

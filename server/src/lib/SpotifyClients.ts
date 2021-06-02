@@ -20,6 +20,10 @@ class SpotifyClients {
     return this.clients.get(user);
   }
 
+  public getAll(users: string[]): SpotifyWebApi[] {
+    return users.map((u) => this.clients.get(u)).filter((x) => x !== undefined) as SpotifyWebApi[];
+  }
+
   public destroy(user: string): void {
     this.clients.delete(user);
   }

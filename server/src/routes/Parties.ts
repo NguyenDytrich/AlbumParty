@@ -47,9 +47,9 @@ router.get('/:partyId', async (req, res) => {
 router.get('/:partyId/host', async (req, res) => {
   const party = await Party.findOne({ where: { uuid: req.params.partyId } });
   if (!party) return res.sendStatus(404);
-  const amiHost = req.session.user === party.owner.username;
+  const amiHost = req.session.user === party.owner;
   res.status(200);
-  return res.json({ host: party.owner.username, isMe: amiHost });
+  return res.json({ host: party.owner, isMe: amiHost });
 });
 
 router.get('/', async (req, res) => {

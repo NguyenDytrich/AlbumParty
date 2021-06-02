@@ -23,9 +23,10 @@ export interface PartyAttributes {
 }
 
 export class Party extends Model {
-  public owner!: User;
+  public owner!: string;
   public uuid!: string;
   public currentlyPlaying!: CurrentlyPlaying;
+  public isPlaying!: boolean;
 }
 
 export const PartyArgs = {
@@ -35,5 +36,8 @@ export const PartyArgs = {
   },
   currentlyPlaying: {
     type: DataTypes.JSON,
+  },
+  isPlaying: {
+    type: DataTypes.Boolean,
   },
 };
