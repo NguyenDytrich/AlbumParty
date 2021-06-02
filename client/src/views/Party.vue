@@ -55,26 +55,37 @@ export default defineComponent({
       trackId: '',
     });
 
+    const updatePlayer = async () => {
+      const uuid = route.params.partyId;
+      const res = await axios.get(`${baseUrl}/parties/${uuid}`);
+      const { contextUri, contextUrl, images, albumName, artists, trackName, trackId } = res.data.currentlyPlaying;
+      if (res.status == 200) {
+        // socket.emit('join-party', { uuid, user: store.state.user });
+
+        // Assign all properties like this otherwise strings won't update
+        currentTrack.contextUri = contextUri;
+        currentTrack.contextUrl = contextUrl;
+        currentTrack.albumName = albumName;
+        currentTrack.artists = artists;
+        currentTrack.trackName = trackName;
+        currentTrack.images = images;
+        currentTrack.trackId = trackId;
+
+        // Set the imgUrl separate of the currentTrack object otherwise
+        // bad things will happen.
+        imgUrl.value = images[0].url;
+        return 200;
+      } else {
+        throw new Error();
+      }
+    };
+
     onBeforeMount(async () => {
       const uuid = route.params.partyId;
       try {
-        const res = await axios.get(`${baseUrl}/parties/${uuid}`);
-        const { contextUri, contextUrl, images, albumName, artists, trackName, trackId } = res.data.currentlyPlaying;
-        if (res.status == 200) {
+        const status = await updatePlayer();
+        if (status == 200) {
           socket.emit('join-party', { uuid, user: store.state.user });
-
-          // Assign all properties like this otherwise strings won't update
-          currentTrack.contextUri = contextUri;
-          currentTrack.contextUrl = contextUrl;
-          currentTrack.albumName = albumName;
-          currentTrack.artists = artists;
-          currentTrack.trackName = trackName;
-          currentTrack.images = images;
-          currentTrack.trackId = trackId;
-
-          // Set the imgUrl separate of the currentTrack object otherwise
-          // bad things will happen.
-          imgUrl.value = images[0].url;
         }
       } catch {
         socket.disconnect();
@@ -84,6 +95,14 @@ export default defineComponent({
     });
     socket.on('message', (args) => {
       chat.value.push(args);
+    });
+    socket.on('update-player', async () => {
+      console.log('updating player...');
+      try {
+        await updatePlayer();
+      } catch (err) {
+        console.error('Error updating player');
+      }
     });
 
     return { socket, router, route, store, chat, newMessage, currentTrack, imgUrl };
