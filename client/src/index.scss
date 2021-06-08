@@ -45,6 +45,17 @@ h1, h2, h3, h4 {
 	justify-content: space-between;
 }
 
+.footer {
+	grid-row-start: 3;
+	grid-column-start: 4;
+	font-size: .7em;
+	text-align: right;
+
+	p {
+		margin: 0;
+	}
+}
+
 .subtext {
 	font-size: 0.75em;
 	margin-top: 0.25em;
@@ -54,7 +65,7 @@ h1, h2, h3, h4 {
 	padding: 1em;
 	display: grid;
 	grid-template-columns: 20em auto 10em;
-	grid-template-rows: 5em auto 5em;
+	grid-template-rows: 5em auto 2em;
 	height: calc(100vh - 2em);
 	width: calc(100vw - 4em);
 	margin: auto;

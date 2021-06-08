@@ -16,6 +16,10 @@
         </div>
       </div>
       <router-view></router-view>
+      <div class="footer">
+        <p>Version {{ version }}</p>
+        <p>Built by Dytrich Nguyen</p>
+      </div>
     </div>
   </div>
 </template>
@@ -30,10 +34,11 @@ export default defineComponent({
   setup() {
     const store = useStore(key);
     const loginUrl = `${process.env.VUE_APP_API_URL}/login`;
+    const version = process.env.VUE_APP_VERSION;
     onBeforeMount(async () => {
       await store.dispatch('tryAuth');
     });
-    return { store, loginUrl };
+    return { store, loginUrl, version };
   },
   computed: {
     ...mapGetters(['isAuth', 'user']),
