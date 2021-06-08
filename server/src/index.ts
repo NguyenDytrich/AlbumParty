@@ -8,12 +8,12 @@ import dotenv from 'dotenv';
 import SequelizeStore from 'connect-session-sequelize';
 import Redis from 'ioredis';
 
-import { init, User } from './models';
+import { init, User, Party } from './models';
 import PartyRoutes from './routes/Parties';
 import PlayerRoutes from './routes/Player';
 
 import SpotifyWebApi from 'spotify-web-api-node';
-import { SpotifyClients as Clients } from './lib';
+import { SpotifyClients as Clients, SpotifyApiHelper as Helper } from './lib';
 
 import qs from 'querystring';
 import crypto from 'crypto';
@@ -129,6 +129,7 @@ const baseUrl = `http://${process.env.HOST_NAME}`;
     });
   });
 
+  // TODO destroy spotify api client as well
   app.post('/logout', (req, res) => {
     req.session.destroy((err) => {
       if (!err) {
@@ -143,6 +144,7 @@ const baseUrl = `http://${process.env.HOST_NAME}`;
   app.use('/player', PlayerRoutes);
 
   // Socket.io initialization
+  // TODO remove from redis when a user leaves
   const server = http.createServer(app);
   io = new Server(server, {
     cors: {
@@ -153,11 +155,40 @@ const baseUrl = `http://${process.env.HOST_NAME}`;
   });
   io.on('connection', (socket: Socket) => {
     socket.on('join-party', async (args) => {
-      // Join the party
+      const party = await Party.findByPk(args.uuid);
+      const host = Clients.get(party?.owner ?? '');
+      const user = Clients.get(args.user);
+
+      if (!party || !host || !user) throw new Error('Socket.io attempted to join non-existant party');
+
+      // Join the party room
       socket.join(args.uuid);
+
       // add user to set in redis
       await redis.sadd(args.uuid, args.user);
-      console.log(await redis.smembers(args.uuid));
+
+      // Sync unless host
+      if (args.user !== party.owner) {
+
+        // Greet
+        io.to(args.uuid).emit('message', {
+          id: 0,
+          author: args.user,
+          message: 'has joined the party!',
+          meta: { server: true },
+        });
+
+        // Play track at playhead
+        const progress = await Helper.getTrackProgress(host);
+        if (progress >= 0) {
+          // Call client.start
+          await user.play({
+            context_uri: party.currentlyPlaying.contextUri,
+            offset: { uri: `spotify:track:${party.currentlyPlaying.trackId}` },
+            position_ms: progress,
+          });
+        }
+      }
     });
     socket.on('new-message', (args) => {
       io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message, meta: {} });

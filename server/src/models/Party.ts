@@ -38,6 +38,6 @@ export const PartyArgs = {
     type: DataTypes.JSON,
   },
   isPlaying: {
-    type: DataTypes.Boolean,
+    type: DataTypes.BOOLEAN,
   },
 };

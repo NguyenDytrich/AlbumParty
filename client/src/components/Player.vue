@@ -76,5 +76,6 @@ export default defineComponent({
 <style scoped lang="scss">
 img {
   width: 100%;
+  max-width: 75vh;
 }
 </style>

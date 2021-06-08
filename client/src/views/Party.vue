@@ -3,7 +3,9 @@
     <div id="chat">
       <h1>Live Chat</h1>
       <div id="log">
-        <Message v-for="m in chat" :key="m.id" :author="m.author" :message="m.message" :meta="m.meta" />
+        <div id="viewport">
+          <Message v-for="m in chat" :key="m.id" :author="m.author" :message="m.message" :meta="m.meta" />
+        </div>
       </div>
       <div id="new-msg">
         <span>></span
@@ -109,12 +111,14 @@ export default defineComponent({
   },
   methods: {
     sendMessage() {
-      this.socket.emit('new-message', {
-        room: this.route.params.partyId,
-        author: this.store.state.user,
-        message: this.newMessage,
-      });
-      this.newMessage = '';
+      if (this.newMessage !== '') {
+        this.socket.emit('new-message', {
+          room: this.route.params.partyId,
+          author: this.store.state.user,
+          message: this.newMessage,
+        });
+        this.newMessage = '';
+      }
     },
   },
   components: {
@@ -158,7 +162,14 @@ input {
   border: 2px solid $color3;
   border-bottom: none;
   padding: 1em;
-  height: 100%;
+  overflow: auto;
+  height: 0px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+#viewport {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

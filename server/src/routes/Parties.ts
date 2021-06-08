@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import { User, Party } from '../models';
-import { SpotifyClients as Clients, SpotifyApiHelper as Helper } from '../lib';
+import { SpotifyClients as Clients, SpotifyApiHelper as Helper, Synchronizer } from '../lib';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
@@ -15,6 +15,8 @@ router.post('/', async (req, res) => {
   if (!req.session.isAuth) return res.status(401);
   const user = await User.findByPk(req.session.user);
   if (!user) return res.sendStatus(401);
+
+  // TODO destroy all timers related to this room too
   await Party.destroy({
     where: {
       owner: req.session.user,
@@ -24,12 +26,19 @@ router.post('/', async (req, res) => {
   const wrapper = Clients.get(user.username);
   if (!wrapper) throw new Error('No wrapper found for user.');
 
-  const playing = await Helper.getTrackInfo(wrapper);
-
+  const uuid = uuidv4();
   const party = await user.createParty({
-    uuid: uuidv4(),
-    currentlyPlaying: playing,
+    uuid,
   });
+
+  await Synchronizer.schedule(uuid, 10);
+
+  let currentlyPlaying = null;
+  while (!currentlyPlaying) {
+    await party.reload();
+    currentlyPlaying = party.currentlyPlaying;
+  }
+
   return res.send(party.uuid);
 });
 

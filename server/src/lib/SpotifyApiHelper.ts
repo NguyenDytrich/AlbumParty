@@ -52,6 +52,20 @@ const SpotifyApiHelper = {
 
     return playing as CurrentlyPlaying;
   },
+  getTimeToUpdate: async (client: SpotifyWebApi): Promise<number> => {
+    const pb = await client.getMyCurrentPlaybackState();
+    const cur = pb.body?.progress_ms;
+    const dur = pb.body?.item?.duration_ms;
+    if (cur && dur) {
+      return dur - cur;
+    } else {
+      return -1;
+    }
+  },
+  getTrackProgress: async (client: SpotifyWebApi): Promise<number> => {
+    const pb = await client.getMyCurrentPlaybackState();
+    return pb.body?.progress_ms ?? -1;
+  },
 };
 
 export default SpotifyApiHelper;

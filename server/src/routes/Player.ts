@@ -1,4 +1,4 @@
-import { SpotifyClients, SpotifyApiHelper as Helper } from '../lib';
+import { SpotifyClients, SpotifyApiHelper as Helper, Synchronizer } from '../lib';
 import { io, redis } from '../index';
 
 import { User, Party } from '../models';
@@ -32,6 +32,7 @@ router.post('/pause', isAuth, async (req, res) => {
   try {
     const dispatched = clients.map((c) => c.pause());
     await Promise.allSettled(dispatched);
+    Synchronizer.cancel(room);
     return res.sendStatus(200);
   } catch (err) {
     console.error(err);
@@ -103,13 +104,15 @@ router.post('/play', isAuth, async (req, res) => {
     }
   }
 
-  const hostClient = SpotifyClients.get(party.owner);
-  // TODO I mean this really shouldn't ever be null, but what if?
-  if (hostClient) {
-    party.currentlyPlaying = await Helper.getTrackInfo(hostClient);
-    await party.save();
-    io.to(room).emit('update-player');
+  // Slight delay before sending the update signal
+  const host = await SpotifyClients.get(party.owner);
+  let ttu = 1000; // Arbitrary 1s time to update if host client doesn't exist
+  if (host) {
+    ttu = (await Helper.getTimeToUpdate(host)) ?? ttu;
   }
+  const timer = await Synchronizer.schedule(room, ttu - 100); // Arbitrary delay
+  await timer;
+
   return res.json(JSON.stringify(statusMap));
 });
 
@@ -120,9 +123,13 @@ router.post('/save', isAuth, async (req, res) => {
     return res.sendStatus(500);
   }
 
+  const playing = await client.getMyCurrentPlayingTrack();
+  const id = playing.body?.item?.id;
+  if(!id) return res.sendStatus(500);
+
   try {
-    await client.addToMySavedTracks(req.body.ids);
-    return res.sendStatus(200);
+    await client.addToMySavedTracks([id]);
+    return res.sendStatus(204);
   } catch (err) {
     console.error(err);
     return res.sendStatus(500);
@@ -161,13 +168,9 @@ router.post('/skip', isAuth, async (req, res) => {
     res.status(500);
   }
 
-  const hostClient = SpotifyClients.get(party.owner);
-  // TODO I mean this really shouldn't ever be null, but what if?
-  if (hostClient) {
-    party.currentlyPlaying = await Helper.getTrackInfo(hostClient);
-    await party.save();
-    io.to(room).emit('update-player');
-  }
+  // Slight delay before sending the update signal
+  const timer = await Synchronizer.schedule(room, 10);
+  await timer;
 
   return res.end();
 });
