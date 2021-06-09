@@ -129,19 +129,6 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
     });
   });
 
-  // TODO destroy spotify api client as well
-  app.post('/logout', async (req, res) => {
-    const party = await Party.findOne({ where: { owner: req.session.user } });
-    req.session.destroy(async (err) => {
-      if (!err) {
-        if (party) await party.destroy();
-        return res.sendStatus(200);
-      } else {
-        return res.sendStatus(500);
-      }
-    });
-  });
-
   app.use('/parties', PartyRoutes);
   app.use('/player', PlayerRoutes);
 
@@ -156,6 +143,40 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
     },
   });
 
+  // Put this here so io is defined in its scope
+  // TODO destroy spotify api client as well
+  app.post('/logout', async (req, res) => {
+    const username = req.session.user ?? '';
+    const party = await Party.findOne({ where: { owner: username } });
+    if (party) await party.destroy();
+
+    const room = await redis.get(`${username}:room`);
+
+    // remove this key is not dependent on whether or not
+    // a room exists
+    await redis.del(`${username}:socket`);
+
+    const socketId = await redis.get(`${username}:socket`);
+    if (socketId && room) {
+      // Remove user from room
+      await redis.srem(room, username);
+      await redis.del(`${username}:room`);
+
+      const sockets = await io.in(socketId).fetchSockets();
+      for (const s of sockets) {
+        s.leave(room);
+      }
+    }
+
+    req.session.destroy(async (err) => {
+      if (!err) {
+        return res.sendStatus(200);
+      } else {
+        return res.sendStatus(500);
+      }
+    });
+  });
+
   // Basic auth middleware
   io.use(async (socket, next) => {
     const username = socket.handshake.auth.user;
@@ -163,10 +184,12 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
     if (!user) {
       next(new Error('Unauthorized'));
     } else {
+      await redis.set(`${username}:socket`, socket.id);
       next();
     }
   });
 
+  // TODO srem user from rooms, flush usr key on disconnect
   io.on('connection', (socket: Socket) => {
     socket.on('join-party', async (args) => {
       const party = await Party.findByPk(args.uuid);
@@ -180,7 +203,7 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
 
       // add user to set in redis
       await redis.sadd(args.uuid, args.user);
-      await redis.set(args.user, args.uuid);
+      await redis.set(`${args.user}:room`, args.uuid);
 
       // Sync unless host
       if (args.user !== party.owner) {
@@ -207,7 +230,19 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
     socket.on('new-message', (args) => {
       io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message, meta: {} });
     });
-    // TODO srem user from rooms, flush usr key on disconnect
+    socket.on('leave-party', async (args) => {
+      const username = socket.handshake.auth.user;
+      await socket.leave(args.uuid);
+      console.log(await redis.srem(args.uuid, username));
+      await redis.del(`${username}:room`);
+
+      io.to(args.uuid).emit('message', {
+        id: 0,
+        author: args.author,
+        message: 'has left the party',
+        meta: { server: true },
+      });
+    });
   });
 
   server.listen(3000, () => {

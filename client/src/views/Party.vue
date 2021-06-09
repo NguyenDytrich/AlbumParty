@@ -113,9 +113,9 @@ export default defineComponent({
       }
     });
 
-    onUnmounted(async () => {
-      //TODO console
-      socket.emit('leave-party', { uuid: route.params.partyId });
+    const roomId = route.params.partyId;
+    onUnmounted(() => {
+      socket.emit('leave-party', { uuid: roomId });
     });
 
     return { socket, router, route, store, chat, newMessage, currentTrack, imgUrl };
