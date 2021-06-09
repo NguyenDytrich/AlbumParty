@@ -36,7 +36,7 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
       resave: false,
       saveUninitialized: false,
       store,
-      secret: 'superdupersecret',
+      secret: process.env.SESSION_SECRET ?? '',
     }),
   );
 
