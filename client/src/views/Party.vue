@@ -41,7 +41,9 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const route = useRoute();
-    const socket = io(baseUrl);
+    const socket = io('https://projects.dytrich-nguyen.com', {
+      path: process.env.VUE_APP_API_SOCKET_URL ?? '/socket.io',
+    });
     const store = useStore(key);
 
     const chat = ref([] as Msg[]);
