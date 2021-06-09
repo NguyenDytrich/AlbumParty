@@ -168,6 +168,7 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
 
       // add user to set in redis
       await redis.sadd(args.uuid, args.user);
+      await redis.set(args.user, args.uuid);
 
       // Sync unless host
       if (args.user !== party.owner) {
@@ -194,6 +195,7 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
     socket.on('new-message', (args) => {
       io.to(args.room).emit('message', { id: 0, author: args.author, message: args.message, meta: {} });
     });
+    // TODO srem user from rooms, flush usr key on disconnect
   });
 
   server.listen(3000, () => {
