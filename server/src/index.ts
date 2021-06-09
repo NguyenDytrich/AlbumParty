@@ -22,7 +22,7 @@ dotenv.config();
 
 let io: Server;
 const redis = new Redis();
-const baseUrl = `http://${process.env.HOST_NAME}`;
+const baseUrl = `https://${process.env.HOST_NAME}`;
 
 (async () => {
   const app = express();
@@ -130,9 +130,11 @@ const baseUrl = `http://${process.env.HOST_NAME}`;
   });
 
   // TODO destroy spotify api client as well
-  app.post('/logout', (req, res) => {
-    req.session.destroy((err) => {
+  app.post('/logout', async (req, res) => {
+    const party = await Party.findOne({ where: { owner: req.session.user } });
+    req.session.destroy(async (err) => {
       if (!err) {
+        if (party) await party.destroy();
         return res.sendStatus(200);
       } else {
         return res.sendStatus(500);
@@ -169,7 +171,6 @@ const baseUrl = `http://${process.env.HOST_NAME}`;
 
       // Sync unless host
       if (args.user !== party.owner) {
-
         // Greet
         io.to(args.uuid).emit('message', {
           id: 0,
