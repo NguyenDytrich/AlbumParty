@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, ref, reactive } from 'vue';
+import { defineComponent, onBeforeMount, onUnmounted, ref, reactive } from 'vue';
 
 import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
@@ -111,6 +111,11 @@ export default defineComponent({
       } catch (err) {
         console.error('Error updating player');
       }
+    });
+
+    onUnmounted(async () => {
+      //TODO console
+      socket.emit('leave-party', { uuid: route.params.partyId });
     });
 
     return { socket, router, route, store, chat, newMessage, currentTrack, imgUrl };
