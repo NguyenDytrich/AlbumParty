@@ -41,10 +41,14 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const route = useRoute();
+    const store = useStore(key);
+
     const socket = io(baseUrl, {
       path: process.env.VUE_APP_API_SOCKET_URL ?? '/socket.io',
+      auth: {
+        user: store.state.user,
+      },
     });
-    const store = useStore(key);
 
     const chat = ref([] as Msg[]);
     const imgUrl = ref('');
