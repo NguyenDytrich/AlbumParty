@@ -7,7 +7,8 @@
   "author": "Dytrich Nguyen",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon --watch 'src/**' --ext 'ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node src'"
+    "dev": "nodemon --watch 'src/**' --ext 'ts' --ignore 'src/**/*.spec.ts' --exec 'ts-node src'",
+		"build": "tsc --noEmit false --outDir dist"
   },
   "dependencies": {
     "@types/express-session": "^1.17.3",
