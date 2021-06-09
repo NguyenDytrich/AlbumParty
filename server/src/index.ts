@@ -157,9 +157,9 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
   });
 
   // Basic auth middleware
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const username = socket.handshake.auth.user;
-    const user = User.findByPk(username);
+    const user = await User.findByPk(username);
     if (!user) {
       next(new Error('Unauthorized'));
     } else {
