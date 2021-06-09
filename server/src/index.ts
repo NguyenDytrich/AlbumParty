@@ -155,6 +155,18 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
       credentials: true,
     },
   });
+
+  // Basic auth middleware
+  io.use((socket, next) => {
+    const username = socket.handshake.auth.user;
+    const user = User.findByPk(username);
+    if (!user) {
+      next(new Error('Unauthorized'));
+    } else {
+      next();
+    }
+  });
+
   io.on('connection', (socket: Socket) => {
     socket.on('join-party', async (args) => {
       const party = await Party.findByPk(args.uuid);
