@@ -22,7 +22,7 @@ dotenv.config();
 
 let io: Server;
 const redis = new Redis();
-const baseUrl = `https://${process.env.HOST_NAME}`;
+const baseUrl = `${process.env.BASE_URL}`;
 
 (async () => {
   const app = express();
@@ -242,6 +242,26 @@ const baseUrl = `https://${process.env.HOST_NAME}`;
         message: 'has left the party',
         meta: { server: true },
       });
+    });
+    socket.on('disconnect', async () => {
+      const username = socket.handshake.auth.user;
+      const room = await redis.get(`${username}:room`);
+
+      // Remove the SocketId from cache
+      await redis.del(`${username}:socket`);
+      // Handle leaving the room
+      if (room) {
+        await socket.leave(room);
+        await redis.srem(room, username);
+        await redis.del(`${username}:room`);
+
+        io.to(room).emit('message', {
+          id: 0,
+          author: username,
+          message: 'has left the party',
+          meta: { server: true },
+        });
+      }
     });
   });
 
